@@ -6,15 +6,20 @@ build-backend = "setuptools.build_meta"
 name = "prometheus-eaton-ups-exporter"
 authors = [
     {name = "Mathis Lövenich"},
+    {name = "Tobias Kadelka"},
 ]
-description = "A Prometheus exporter for Eaton UPSs."
-version = "1.2.0"
-readme = "README.md"
+description = "An Eaton UPS device metric exporter for Prometheus"
+readme = {file = "README.md", content-type = "text/markdown"}
 requires-python = ">=3.11"
-keywords = ["prometheus", "exporter", "eaton"]
-license = {text = "ISC"}
+keywords = ["prometheus", "monitoring", "eaton", "ups"]
+license = {file = "LICENSE.txt"}
 classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: ISC License (ISCL)",
+    "Natural Language :: English",
     "Programming Language :: Python :: 3",
+    "Topic :: System :: Monitoring",
 ]
 dependencies = [
     'httpx',
@@ -22,10 +27,9 @@ dependencies = [
     'requests',
 ]
 
-
 [project.urls]
-"Bug Reports" = "https://github.com/psyinfra/prometheus-eaton-ups-exporter/issues"
-"Source" = "https://github.com/psyinfra/prometheus-eaton-ups-exporter/"
+repository = "https://github.com/psyinfra/prometheus-eaton-ups-exporter/"
+issues = "https://github.com/psyinfra/prometheus-eaton-ups-exporter/issues"
 
 [project.optional-dependencies]
 tests = [
@@ -35,9 +39,10 @@ tests = [
     'pytest-asyncio',
     'pytest-vcr',
 ]
+dynamic = ["version"]
 
 [project.scripts]
-prometheus_eaton_ups_exporter = "prometheus_eaton_ups_exporter.main:main"
+prometheus_eatonups_exporter = "prometheus_eaton_ups_exporter.main:main"
 
-[tool.setuptools.packages]
-find = {}  # Scanning implicit namespaces is active by default
+[tool.setuptools.dynamic]
+version = {attr = "prometheus_eaton_ups_exporter.VERSION"}
