@@ -1,5 +1,7 @@
 """REST API web scraper for Eaton UPS measure data."""
 import json
+import logging
+import urllib3
 
 from requests import Session, Response
 import httpx
@@ -11,9 +13,6 @@ from requests.exceptions import (
         ReadTimeout,
         SSLError,
         )
-# pyre-ignore[21]: pyre thinks urllib3 is not part of requests
-from requests.packages import urllib3
-from prometheus_eaton_ups_exporter import create_logger
 from prometheus_eaton_ups_exporter.scraper_globals import (
         AUTHENTICATION_FAILED,
         CERTIFICATE_VERIFY_FAILED,
@@ -31,6 +30,9 @@ from prometheus_eaton_ups_exporter.scraper_globals import (
         TIMEOUT_ERROR,
         )
 from typing import Tuple
+
+
+logger = logging.getLogger('prometheus_ntp_exporter')
 
 
 class UPSScraper:
@@ -56,14 +58,12 @@ class UPSScraper:
                  authentication: Tuple[str, str],
                  name: str | None = None,
                  insecure: bool = False,
-                 verbose: bool = False,
                  login_timeout: int = 10) -> None:
         self.ups_address = ups_address
         self.username, self.password = authentication
         self.name = name
         self.login_timeout = login_timeout
         self.session = Session()
-        self.logger = create_logger(__name__, not verbose)
 
         # ignore self signed certificate
         self.session.verify = not insecure
@@ -100,7 +100,7 @@ class UPSScraper:
             token_type = login_response['token_type']
             access_token = login_response['access_token']
 
-            self.logger.debug(
+            logger.debug(
                 "Authentication successful on (%s)",
                 self.ups_address
             )
@@ -171,7 +171,7 @@ class UPSScraper:
             # Session might be expired, connect again
             try:
                 if "errorCode" in request.json() or "code" in request.json():
-                    self.logger.debug('Session expired, reconnect')
+                    logger.debug('Session expired, reconnect')
                     self.token_type, self.access_token = await self.login()
                     return await self.load_page(url)
             except ValueError:
@@ -179,7 +179,7 @@ class UPSScraper:
 
             # try to login, if not authorized
             if "Unauthorized" in request.text:
-                self.logger.debug('Unauthorized, try to login')
+                logger.debug('Unauthorized, try to login')
                 try:
                     self.token_type, self.access_token = await self.login()
                     return await self.load_page(url)
@@ -192,10 +192,10 @@ class UPSScraper:
                     # else
                     raise err
 
-            self.logger.debug('GET %s', url)
+            logger.debug('GET %s', url)
             return request
         except ConnectionError:
-            self.logger.debug('Connection Error try to login again')
+            logger.debug('Connection Error try to login again')
             try:
                 self.token_type, self.access_token = await self.login()
                 return await self.load_page(url)
@@ -257,12 +257,12 @@ class UPSScraper:
             }
 
         except LoginFailedException as err:
-            self.logger.error(err)
+            logger.error(err)
             print(f"{err.__class__.__name__} - ({self.ups_address}): "
                   f"{err.message}")
         except json.decoder.JSONDecodeError as err:
-            self.logger.debug("This needs to be solved by a developer")
-            self.logger.error(err)
+            logger.debug("This needs to be solved by a developer")
+            logger.error(err)
         except Exception:
             raise
 
